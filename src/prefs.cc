@@ -431,6 +431,9 @@ PrefPtr PREF_CONTENT_DISPOSITION_DEFAULT_UTF8 =
     makePref("content-disposition-default-utf8");
 // value: true | false
 PrefPtr PREF_NO_WANT_DIGEST_HEADER = makePref("no-want-digest-header");
+// value: 1*digit
+PrefPtr PREF_MAX_HTTP_RANGE_SIZE = makePref("max-http-range-size");
+PrefPtr PREF_FORCE_HTTP_RANGE = makePref("force-http-range");
 
 /**
  * Proxy related preferences

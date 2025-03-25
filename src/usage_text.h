@@ -1108,7 +1108,8 @@
     "                              contains 5 files, then file size is the total\n" \
     "                              size of those files. If file size is strictly\n" \
     "                              greater than the size specified in this option,\n" \
-    "                              mmap will be disabled.")
+    "                              mmap will be disabled for that download. This\n" \
+    "                              option is open to change in future. Default: %s")
 #define TEXT_STDERR \
   _(" --stderr[=true|false]        Redirect all console output that would be\n" \
     "                              otherwise printed in stdout to stderr.")
@@ -1129,5 +1130,21 @@
     "                              file saved by --bt-save-metadata option. If it is\n" \
     "                              successful, then skip downloading metadata from\n" \
     "                              DHT.")
+
+#define TEXT_MAX_HTTP_PIPELINING                                         \
+  _(" --max-http-pipelining=NUM    The maximum number for the pipelining. The number\n" \
+    "                              must be a positive integer. Default: %d")
+#define TEXT_MAX_HTTP_RANGE_SIZE                                         \
+  _(" --max-http-range-size=SIZE   Set maximum size of a single HTTP Range request.\n" \
+    "                              If this option is used, specified\n" \
+    "                              length per Range request is limited to SIZE.\n" \
+    "                              Setting 0 disables this limitation.\n" \
+    "                              You can append K or M(1K = 1024, 1M = 1024K).")
+
+#define TEXT_FORCE_HTTP_RANGE                                         \
+  _(" --force-http-range[=true|false] Force using HTTP Range even for single-part downloads\n" \
+    "                              or when Range would not normally be needed.\n" \
+    "                              This is useful for some servers that require Range header\n" \
+    "                              to be present in the request. Default: false")
 
 // clang-format on

@@ -438,7 +438,7 @@ std::vector<OptionHandler*> OptionHandlerFactory::createOptionHandlers()
   {
     OptionHandler* op(new NumberOptionHandler(PREF_MAX_CONNECTION_PER_SERVER,
                                               TEXT_MAX_CONNECTION_PER_SERVER,
-                                              "1", 1, 16, 'x'));
+                                              "1", 1, 100, 'x'));
     op->addTag(TAG_BASIC);
     op->addTag(TAG_FTP);
     op->addTag(TAG_HTTP);
@@ -903,7 +903,7 @@ std::vector<OptionHandler*> OptionHandlerFactory::createOptionHandlers()
   }
   {
     OptionHandler* op(new UnitNumberOptionHandler(
-        PREF_PIECE_LENGTH, TEXT_PIECE_LENGTH, "1M", 1_m, 1_g));
+        PREF_PIECE_LENGTH, TEXT_PIECE_LENGTH, "1M", 16_k, 1_g));
     op->addTag(TAG_ADVANCED);
     op->addTag(TAG_FTP);
     op->addTag(TAG_HTTP);
@@ -1115,9 +1115,9 @@ std::vector<OptionHandler*> OptionHandlerFactory::createOptionHandlers()
     handlers.push_back(op);
   }
   {
-    OptionHandler* op(new BooleanOptionHandler(PREF_HTTP_NO_CACHE,
-                                               TEXT_HTTP_NO_CACHE, A2_V_FALSE,
-                                               OptionHandler::OPT_ARG));
+    OptionHandler* op(new BooleanOptionHandler(
+        PREF_HTTP_NO_CACHE, TEXT_HTTP_NO_CACHE, A2_V_FALSE,
+        OptionHandler::OPT_ARG));
     op->addTag(TAG_HTTP);
     op->setInitialOption(true);
     op->setChangeGlobalOption(true);
@@ -1990,6 +1990,27 @@ std::vector<OptionHandler*> OptionHandlerFactory::createOptionHandlers()
                                                OptionHandler::OPT_ARG, 'h'));
     op->addTag(TAG_BASIC);
     op->addTag(TAG_HELP);
+    handlers.push_back(op);
+  }
+  {
+    OptionHandler* op(new UnitNumberOptionHandler(PREF_MAX_HTTP_RANGE_SIZE,
+                                                  TEXT_MAX_HTTP_RANGE_SIZE,
+                                                  "0", 0));
+    op->addTag(TAG_HTTP);
+    op->setInitialOption(true);
+    op->setChangeGlobalOption(true);
+    op->setChangeOptionForReserved(true);
+    handlers.push_back(op);
+  }
+  {
+    OptionHandler* op(new BooleanOptionHandler(PREF_FORCE_HTTP_RANGE,
+                                               TEXT_FORCE_HTTP_RANGE,
+                                               A2_V_FALSE,
+                                               OptionHandler::OPT_ARG));
+    op->addTag(TAG_HTTP);
+    op->setInitialOption(true);
+    op->setChangeGlobalOption(true);
+    op->setChangeOptionForReserved(true);
     handlers.push_back(op);
   }
 

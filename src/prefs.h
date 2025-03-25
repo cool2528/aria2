@@ -363,6 +363,12 @@ extern PrefPtr PREF_ENABLE_HTTP_PIPELINING;
 extern PrefPtr PREF_MAX_HTTP_PIPELINING;
 // value: string
 extern PrefPtr PREF_HEADER;
+// values: 1*digit
+extern PrefPtr PREF_MAX_HTTP_RANGE_SIZE;
+// value: true | false
+extern PrefPtr PREF_FORCE_HTTP_RANGE;
+// value: true | false
+extern PrefPtr PREF_HTTP_NO_CACHE;
 // value: string that your file system recognizes as a file name.
 extern PrefPtr PREF_CERTIFICATE;
 // value: string that your file system recognizes as a file name.

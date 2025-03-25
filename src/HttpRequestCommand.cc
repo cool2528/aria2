@@ -100,6 +100,12 @@ createHttpRequest(const std::shared_ptr<Request>& req,
   httpRequest->setProxyRequest(proxyRequest);
   httpRequest->setAcceptMetalink(rg->getDownloadContext()->getAcceptMetalink());
   httpRequest->setNoWantDigest(option->getAsBool(PREF_NO_WANT_DIGEST_HEADER));
+  
+  // 设置Range最大长度
+  int64_t maxRangeSize = option->getAsLLInt(PREF_MAX_HTTP_RANGE_SIZE);
+  if (maxRangeSize > 0) {
+    httpRequest->setEndRangeLength(maxRangeSize);
+  }
 
   if (option->getAsBool(PREF_HTTP_ACCEPT_GZIP)) {
     httpRequest->enableAcceptGZip();

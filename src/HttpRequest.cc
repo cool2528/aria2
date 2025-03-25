@@ -63,6 +63,7 @@ HttpRequest::HttpRequest()
       authConfigFactory_(nullptr),
       option_(nullptr),
       endOffsetOverride_(0),
+      endRangeLength_(0),
       userAgent_(USER_AGENT),
       contentEncodingEnabled_(true),
       acceptMetalink_(false),
@@ -101,10 +102,28 @@ int64_t HttpRequest::getEndByte() const
   if (request_->isPipeliningEnabled()) {
     auto endByte = fileEntry_->gtoloff(segment_->getPosition() +
                                        segment_->getLength() - 1);
-    return std::min(endByte, fileEntry_->getLength() - 1);
+    endByte = std::min(endByte, fileEntry_->getLength() - 1);
+    
+    // 如果设置了最大Range长度，则限制范围
+    if (endRangeLength_ > 0) {
+      int64_t startByte = getStartByte();
+      int64_t maxEndByte = startByte + endRangeLength_ - 1;
+      endByte = std::min(endByte, maxEndByte);
+    }
+    
+    return endByte;
   }
   if (endOffsetOverride_ > 0) {
-    return endOffsetOverride_ - 1;
+    int64_t endByte = endOffsetOverride_ - 1;
+    
+    // 如果设置了最大Range长度，则限制范围
+    if (endRangeLength_ > 0) {
+      int64_t startByte = getStartByte();
+      int64_t maxEndByte = startByte + endRangeLength_ - 1;
+      endByte = std::min(endByte, maxEndByte);
+    }
+    
+    return endByte;
   }
   return 0;
 }
@@ -198,9 +217,23 @@ std::string HttpRequest::createRequest()
   if (!request_->isKeepAliveEnabled() && !request_->isPipeliningEnabled()) {
     builtinHds.emplace_back("Connection:", "close");
   }
+  
+  // 根据条件添加Range头部
+  bool addRangeHeader = false;
+  
+  // 条件1: 有分片并且长度大于0，且启用了pipelining或者有指定起始或结束byte
   if (segment_ && segment_->getLength() > 0 &&
       (request_->isPipeliningEnabled() || getStartByte() > 0 ||
        getEndByte() > 0)) {
+    addRangeHeader = true;
+  }
+  
+  // 条件2: 强制使用Range头部
+  if (option_ && option_->getAsBool(PREF_FORCE_HTTP_RANGE)) {
+    addRangeHeader = true;
+  }
+  
+  if (addRangeHeader) {
     std::string rangeHeader = "bytes=";
     rangeHeader += util::uitos(getStartByte());
     rangeHeader += '-';
@@ -213,6 +246,7 @@ std::string HttpRequest::createRequest()
     }
     builtinHds.emplace_back("Range:", rangeHeader);
   }
+  
   if (proxyRequest_) {
     if (request_->isKeepAliveEnabled() || request_->isPipeliningEnabled()) {
       builtinHds.emplace_back("Connection:", "Keep-Alive");

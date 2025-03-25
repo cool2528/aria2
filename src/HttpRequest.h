@@ -83,6 +83,11 @@ private:
   // bytes and it is also true if it is used via HTTP proxy.
   int64_t endOffsetOverride_;
 
+  // Maximum range length in bytes. If this value is greater than 0,
+  // the range will be limited to this value. Otherwise, the range will
+  // use the original calculated end byte.
+  int64_t endRangeLength_;
+
   std::vector<std::string> headers_;
 
   std::string userAgent_;
@@ -146,6 +151,10 @@ public:
   int64_t getStartByte() const;
 
   int64_t getEndByte() const;
+
+  void setEndRangeLength(int64_t length) { endRangeLength_ = length; }
+
+  int64_t getEndRangeLength() const { return endRangeLength_; }
 
   /**
    * Returns string representation of http request.  It usually starts
