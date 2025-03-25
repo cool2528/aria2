@@ -262,11 +262,16 @@ jobs:
             if [ "$RUNNER_OS" == "Linux" ]; then
               # 将任何对绝对路径/config.status的引用改为相对路径
               sed -i 's|/config.status|../config.status|g' po/Makefile
-              # 修复对本地config.status的引用
-              sed -i 's|config.status|../config.status|g' po/Makefile
+              # 修复对不正确路径的引用，保留以../开头的正确引用
+              sed -i 's|\([^\.]\)config.status|\1../config.status|g' po/Makefile
+              sed -i 's|^\(config.status\)|../\1|g' po/Makefile
+              sed -i 's|\./config.status|../config.status|g' po/Makefile
             else
               sed -i '' 's|/config.status|../config.status|g' po/Makefile
-              sed -i '' 's|config.status|../config.status|g' po/Makefile
+              # macOS版本修复
+              sed -i '' 's|\([^\.]\)config.status|\1../config.status|g' po/Makefile
+              sed -i '' 's|^\(config.status\)|../\1|g' po/Makefile
+              sed -i '' 's|\./config.status|../config.status|g' po/Makefile
             fi
           fi
           
@@ -311,6 +316,6 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: aria2-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.crypto }}
+        name: aria2-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.crypto }}-${{ matrix.bittorrent }}
         path: artifacts/
         retention-days: 7
