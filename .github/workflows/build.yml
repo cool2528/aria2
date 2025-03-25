@@ -185,14 +185,14 @@ jobs:
     - name: Configure autotools (Linux, gnutls)
       if: runner.os == 'Linux' && matrix.crypto == 'gnutls'
       run: |
-        ./configure --with-gnutls --without-openssl $FEATURE_FLAGS || { cat config.log; exit 1; }
+        ./configure --with-gnutls --without-openssl --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
     - name: Configure autotools (Linux, openssl)
       if: runner.os == 'Linux' && matrix.crypto == 'openssl'
       run: |
-        ./configure --without-gnutls --with-openssl $FEATURE_FLAGS || { cat config.log; exit 1; }
+        ./configure --without-gnutls --with-openssl --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
@@ -225,7 +225,7 @@ jobs:
         # 配置构建
         ./configure \
           --without-openssl --without-gnutls --with-appletls \
-          --disable-nls || { cat config.log; exit 1; }
+          --disable-nls --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
@@ -297,21 +297,85 @@ jobs:
 
     - name: Build aria2
       run: |
-        # 尝试构建，如果失败也要继续执行工作流
-        make -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" || echo "Build failed but continuing"
+        # 确保生成了所有源文件并进行正确的配置
+        echo "显示顶层Makefile中的程序编译目标:"
+        grep "^bin_PROGRAMS" Makefile || echo "未找到bin_PROGRAMS定义"
+        
+        # 尝试构建，显示详细信息
+        make -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" V=1 || { echo "构建失败，退出代码: $?"; exit 1; }
+        
+        # 强制构建aria2c可执行文件
+        echo "强制构建aria2c可执行文件..."
+        cd src && make aria2c V=1
+        cd ..
+        
+        # 检查构建结果
+        echo "检查编译后的二进制文件:"
+        if [ -f src/aria2c ]; then
+          file src/aria2c
+          ls -la src/aria2c
+        elif [ -f src/.libs/aria2c ]; then
+          file src/.libs/aria2c
+          ls -la src/.libs/aria2c
+        else
+          echo "在常规位置未找到aria2c可执行文件，搜索整个src目录..."
+          find src -name "aria2c" -type f
+        fi
         
     - name: Run tests
       run: |
         # 运行测试，保存返回状态
-        make -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" check || echo "Tests failed with status $?"
+        make -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" check || echo "测试失败，状态码: $?"
         
     - name: Create artifacts directory
       if: always()
       run: |
         mkdir -p artifacts
-        cp -f src/aria2c artifacts/ 2>/dev/null || echo "aria2c binary not found"
+        echo "检查src目录下的文件:"
+        ls -la src/ | grep -E 'aria2c|\.libs' || echo "src目录下没有找到aria2c相关文件"
+        
+        echo "检查src/.libs目录(如果存在):"
+        if [ -d src/.libs ]; then
+          ls -la src/.libs/ || echo "src/.libs/目录为空"
+        else
+          echo "src/.libs/目录不存在"
+        fi
+        
+        echo "尝试查找aria2c文件:"
+        find src -name "aria2c*" -type f || echo "在src目录下未找到任何aria2c文件"
+        
+        # 尝试从多个可能的位置复制aria2c
+        ARIA2C_PATH=""
+        if [ -f src/aria2c ]; then
+          ARIA2C_PATH="src/aria2c"
+        elif [ -f src/.libs/aria2c ]; then
+          ARIA2C_PATH="src/.libs/aria2c"
+        else
+          # 搜索整个项目目录
+          ARIA2C_PATH=$(find . -name "aria2c" -type f -perm -u+x | head -1)
+        fi
+        
+        if [ -n "$ARIA2C_PATH" ]; then
+          echo "找到可执行文件: $ARIA2C_PATH，复制到构件目录"
+          cp -f "$ARIA2C_PATH" artifacts/
+          file artifacts/aria2c || echo "无法确定复制后的文件类型"
+          ls -la artifacts/aria2c || echo "复制后文件不存在"
+        else
+          echo "未找到aria2c可执行文件，复制libaria2.a库文件"
+          # 如果没有找到可执行文件，至少复制库文件作为临时解决方案
+          if [ -f src/.libs/libaria2.a ]; then
+            cp -f src/.libs/libaria2.a artifacts/
+            echo "已复制libaria2.a到构件目录"
+          fi
+        fi
+        
+        # 复制日志文件
         cp -f config.log artifacts/ 2>/dev/null || echo "config.log not found"
         
+        # 验证构件目录内容
+        echo "构件目录内容:"
+        ls -la artifacts/
+
     - name: Upload build artifacts
       if: always()
       uses: actions/upload-artifact@v4
