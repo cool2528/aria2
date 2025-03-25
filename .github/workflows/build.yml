@@ -360,27 +360,17 @@ jobs:
             mv po/Makefile po/Makefile.broken
             
             # 创建一个最小的Makefile，跳过po目录的处理
-            cat > po/Makefile << 'EOF'
-# 这是一个最小化的Makefile，用于跳过po目录的处理
-# 原始文件已保存为Makefile.broken
-
-all:
-  @echo "跳过po目录处理"
-
-check:
-  @echo "跳过po目录检查"
-
-clean:
-  @echo "跳过po目录清理"
-
-install:
-  @echo "跳过po目录安装"
-
-uninstall:
-  @echo "跳过po目录卸载"
-
-.PHONY: all check clean install uninstall
-EOF
+            # 使用printf代替heredoc，避免制表符问题
+            echo "# 这是一个最小化的Makefile，用于跳过po目录的处理" > po/Makefile
+            echo "# 原始文件已保存为Makefile.broken" >> po/Makefile
+            echo "" >> po/Makefile
+            printf "all:\\n\\t@echo \"跳过po目录处理\"\\n\\n" >> po/Makefile
+            printf "check:\\n\\t@echo \"跳过po目录检查\"\\n\\n" >> po/Makefile
+            printf "clean:\\n\\t@echo \"跳过po目录清理\"\\n\\n" >> po/Makefile
+            printf "install:\\n\\t@echo \"跳过po目录安装\"\\n\\n" >> po/Makefile
+            printf "uninstall:\\n\\t@echo \"跳过po目录卸载\"\\n\\n" >> po/Makefile
+            echo ".PHONY: all check clean install uninstall" >> po/Makefile
+            
             echo "已创建最小化的po/Makefile以跳过此目录的处理"
           fi
           
