@@ -65,9 +65,27 @@ jobs:
       run: |
         echo 'CC=gcc' >> $GITHUB_ENV
         echo 'CXX=g++' >> $GITHUB_ENV
+    - name: Check autotools versions
+      run: |
+        autoconf --version
+        automake --version
+        autopoint --version || echo "autopoint not available"
+        gettext --version
+        which autoreconf
+    - name: Ensure complete gettext installation on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew unlink gettext || true
+        brew install gettext
+        brew link --force gettext
+        echo 'export PATH="/usr/local/opt/gettext/bin:$PATH"' >> ~/.bash_profile
+        source ~/.bash_profile
     - name: Libtool
       run: |
+        rm -f config.status
+        rm -rf autom4te.cache
         autoreconf -ivf
+        cd po && autoreconf -ivf && cd ..
     - name: Setup compiler flags
       run: |
         asanflags="-fsanitize=address,undefined -fno-sanitize-recover=undefined"
@@ -103,3 +121,4 @@ jobs:
         grep "top_builddir" po/Makefile
         # 执行构建并明确指定变量
         make top_builddir=`pwd` -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" check
+   
