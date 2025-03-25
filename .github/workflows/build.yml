@@ -85,7 +85,7 @@ jobs:
         rm -f config.status
         rm -rf autom4te.cache
         autoreconf -ivf
-        cd po && autoreconf -ivf && cd ..
+        
     - name: Setup compiler flags
       run: |
         asanflags="-fsanitize=address,undefined -fno-sanitize-recover=undefined"
