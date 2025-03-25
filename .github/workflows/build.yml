@@ -365,19 +365,19 @@ jobs:
 # 原始文件已保存为Makefile.broken
 
 all:
-	@echo "跳过po目录处理"
+  @echo "跳过po目录处理"
 
 check:
-	@echo "跳过po目录检查"
+  @echo "跳过po目录检查"
 
 clean:
-	@echo "跳过po目录清理"
+  @echo "跳过po目录清理"
 
 install:
-	@echo "跳过po目录安装"
+  @echo "跳过po目录安装"
 
 uninstall:
-	@echo "跳过po目录卸载"
+  @echo "跳过po目录卸载"
 
 .PHONY: all check clean install uninstall
 EOF
