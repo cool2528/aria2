@@ -185,14 +185,14 @@ jobs:
     - name: Configure autotools (Linux, gnutls)
       if: runner.os == 'Linux' && matrix.crypto == 'gnutls'
       run: |
-        ./configure --with-gnutls --without-openssl --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
+        ./configure --with-gnutls --without-openssl $FEATURE_FLAGS || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
     - name: Configure autotools (Linux, openssl)
       if: runner.os == 'Linux' && matrix.crypto == 'openssl'
       run: |
-        ./configure --without-gnutls --with-openssl --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
+        ./configure --without-gnutls --with-openssl $FEATURE_FLAGS || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
@@ -225,7 +225,7 @@ jobs:
         # 配置构建
         ./configure \
           --without-openssl --without-gnutls --with-appletls \
-          --disable-nls --disable-libaria2 $FEATURE_FLAGS || { cat config.log; exit 1; }
+          --disable-nls || { cat config.log; exit 1; }
         # 验证config.status已创建在正确位置
         ls -la config.status
 
