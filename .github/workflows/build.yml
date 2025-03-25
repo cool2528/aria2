@@ -43,8 +43,18 @@ jobs:
     - name: MacOS setup
       if: runner.os == 'macOS'
       run: |
-        brew install cppunit gettext openssl libssh2 c-ares sqlite3 \
+        brew install cppunit gettext openssl@3 libssh2 c-ares sqlite3 \
           autoconf automake pkg-config libtool
+        
+        # 显示并验证automake版本和位置
+        brew info automake
+        which automake
+        automake --version
+        
+        # 显示automake辅助文件的位置
+        echo "查找automake辅助文件位置："
+        find /opt/homebrew/share -name "compile" | grep automake || echo "未找到compile文件"
+        find /opt/homebrew/share -name "missing" | grep automake || echo "未找到missing文件"
     - name: Setup clang (Linux)
       if: runner.os == 'Linux' && matrix.compiler == 'clang'
       run: |
@@ -77,6 +87,68 @@ jobs:
         libtoolize --force || glibtoolize --force || true
         echo "Running autopoint..."
         autopoint || echo "autopoint failed, continuing anyway"
+        
+        # 检查并手动创建缺失的辅助文件
+        echo "检查必要的辅助文件..."
+        # 检测操作系统类型
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          # macOS特定路径和命令
+          AUTOMAKE_DIRS=(
+            "/opt/homebrew/share/automake-*"
+            "/usr/local/share/automake-*"
+            "/usr/share/automake-*"
+          )
+        else
+          # Linux特定路径
+          AUTOMAKE_DIRS=(
+            "/usr/share/automake-*"
+            "/usr/local/share/automake-*"
+          )
+        fi
+        
+        # 通用函数：尝试从系统中找到并复制文件
+        copy_automake_file() {
+          local file_name=$1
+          local found=false
+          
+          # 检查当前文件是否已存在
+          if [ -f "$file_name" ]; then
+            echo "$file_name 已存在，无需创建"
+            return 0
+          fi
+          
+          echo "尝试查找 $file_name..."
+          
+          # 从系统目录查找文件
+          for dir in "${AUTOMAKE_DIRS[@]}"; do
+            if ls $dir/$file_name 1>/dev/null 2>&1; then
+              newest_file=$(ls -t $dir/$file_name 2>/dev/null | head -1)
+              if [ -n "$newest_file" ]; then
+                echo "从 $newest_file 复制 $file_name"
+                cp "$newest_file" ./$file_name
+                found=true
+                break
+              fi
+            fi
+          done
+          
+          # 如果仍未找到，尝试从网络获取
+          if [ "$found" = false ]; then
+            echo "未在系统中找到 $file_name，尝试从网络获取..."
+            curl -sS -o $file_name "https://raw.githubusercontent.com/autotools-mirror/automake/master/lib/$file_name" && \
+            chmod +x $file_name && \
+            echo "成功从网络下载 $file_name" || \
+            echo "无法获取 $file_name"
+          fi
+        }
+        
+        # 复制必要的辅助文件
+        copy_automake_file "compile"
+        copy_automake_file "missing"
+        
+        # 显示当前目录中的辅助文件
+        echo "查看当前辅助文件："
+        ls -l compile missing install-sh config.guess config.sub ltmain.sh 2>/dev/null || echo "部分文件仍然缺失"
 
     - name: Set compiler flags (Linux)
       if: runner.os == 'Linux'
@@ -127,6 +199,30 @@ jobs:
     - name: Configure autotools (macOS)
       if: runner.os == 'macOS'
       run: |
+        # 再次确认辅助文件存在
+        echo "确保auxdir辅助文件存在..."
+        if [ ! -f "compile" ] || [ ! -f "missing" ]; then
+          echo "缺少辅助文件，重新创建..."
+          automake --add-missing --copy
+          
+          # 如果仍然缺失，手动从系统复制
+          if [ ! -f "compile" ]; then
+            AUTOMAKE_DIR=$(ls -d /opt/homebrew/Cellar/automake/*/share/automake-* | head -1)
+            echo "从 $AUTOMAKE_DIR 复制compile文件"
+            cp "$AUTOMAKE_DIR/compile" ./
+          fi
+          
+          if [ ! -f "missing" ]; then
+            AUTOMAKE_DIR=$(ls -d /opt/homebrew/Cellar/automake/*/share/automake-* | head -1)
+            echo "从 $AUTOMAKE_DIR 复制missing文件"
+            cp "$AUTOMAKE_DIR/missing" ./
+          fi
+        fi
+        
+        # 确保目录中存在这些文件
+        ls -la compile missing
+        
+        # 配置构建
         ./configure \
           --without-openssl --without-gnutls --with-appletls \
           --disable-nls || { cat config.log; exit 1; }
