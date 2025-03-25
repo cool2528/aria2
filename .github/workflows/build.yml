@@ -67,7 +67,7 @@ jobs:
         echo 'CXX=g++' >> $GITHUB_ENV
     - name: Libtool
       run: |
-        autoreconf -i
+        autoreconf -ivf
     - name: Setup compiler flags
       run: |
         asanflags="-fsanitize=address,undefined -fno-sanitize-recover=undefined"
