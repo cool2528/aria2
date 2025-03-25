@@ -99,4 +99,7 @@ jobs:
           --disable-nls
     - name: Build aria2
       run: |
-        make -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" check
+        # 确保变量正确设置
+        grep "top_builddir" po/Makefile
+        # 执行构建并明确指定变量
+        make top_builddir=`pwd` -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)" check
